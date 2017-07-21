@@ -51,8 +51,8 @@ sampleAt rate (Animation dur t) = map (\frame -> t $ (fromIntegral frame) / rate
   where
   maxFrame = floor (rate * dur) - 1
 
-test :: [Float]
-test = sampleAt 1 $ holdFor 5 $ pauseFor 5 $ takeTime 5 $ aTween 7 9
+test :: [Rectangle]
+test = sampleAt 1 $ holdFor 5 $ pauseFor 5 $ takeTime 5 $ moveRect ((2, 2), (4,4)) ((0,0), (6,6))
 --test = let (Animation d f) = holdFor 5 $ pauseFor 5 $ takeTime 5 $ aTween 7 9 in [d, f 0]
 
 -- anim = (viewport springs (Seconds 1) from ((10,10), (20,20)) to ((0,0), (40,40)))
@@ -60,3 +60,7 @@ test = sampleAt 1 $ holdFor 5 $ pauseFor 5 $ takeTime 5 $ aTween 7 9
 -- that = holdFor (Seconds 5) this
 
 -- holdFor (Seconds 5) $ pauseFor (Seconds 5) $ anim
+
+data Rectangle = Rectangle (Float, Float) (Float, Float) deriving (Show)
+
+moveRect ((x0, y0), (x1, y1)) ((x2, y2), (x3, y3)) = Animation 1.0 $ \time -> Rectangle (tween x0 x2 time, tween y0 y2 time) (tween x1 x3 time, tween y1 y3 time)
