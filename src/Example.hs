@@ -75,8 +75,10 @@ data Rectangle = Rectangle (Float, Float) (Float, Float) deriving (Show)
 moveRect ((x0, y0), (x1, y1)) ((x2, y2), (x3, y3)) = Animation 1.0 $ \time -> Rectangle (tween x0 x2 time, tween y0 y2 time) (tween x1 x3 time, tween y1 y3 time)
 
 data TestObj = TestObj { _size :: (Float, Float), _pos :: (Float, Float) } deriving (Show)
+makeLenses ''TestObj
 
 data TestScene = TestScene { _alice :: Maybe TestObj, _bob :: Maybe TestObj } deriving (Show)
+makeLenses ''TestScene
 
 -- testAnimation = takeTime 5 (alice is nothing) after (alice is (Just (0,0) (10, 10)) and alice.size goesFrom (0,0) (10,10))
 
@@ -89,14 +91,38 @@ atT timeToStart (Animation dur t) = Animation (dur + timeToStart) $ \time a -> i
 bothA :: Animation (a -> a) -> Animation (a -> a) -> Animation (a -> a)
 bothA (Animation dur1 t1) (Animation dur2 t2) = Animation (max dur1 dur2) $ \time a -> t2 time $ t1 time a
 
+allA :: [Animation (a -> a)] -> Animation (a -> a)
+allA = foldl1 bothA
+
 animate :: Animation (a -> a) -> a -> Animation a
 animate (Animation dur t) a = Animation dur $ \time -> t time a
 
+(.~~.) :: Tweenable b => ASetter s t a b -> b -> b -> Time -> s -> t
+(.~~.) lns v1 v2 time obj = set lns (tween v1 v2 time) obj
+
+(.~~) :: Tweenable b => ASetter s s a b -> b -> b -> Animation (s -> s)
+(.~~) lns v1 v2 = Animation 1 $ \time -> set lns (tween v1 v2 time)
+
+doA :: (a -> a) -> Animation (a -> a)
+doA f = Animation 1 $ \_ -> f
+
 testAnimation :: Animation TestScene
-testAnimation = animate (bothA stuff things) defaultScene
+testAnimation = animate anims defaultScene
   where
-  stuff = atT 2 $ holdFor 2 $ Animation 1 $ \time a -> a{_alice = Just $ defaultAlice{_size = tween (0,0) (100,100) time}}
-  things = atT 5 $ holdFor 2 $ Animation 1 $ \time a -> a{_bob = Just $ defaultBob{_size = tween (0,0) (100,100) time}}
+  anims = allA [
+    -- Alice appears at 2
+    atT 2 $ allA [
+      doA $ alice .~ Just defaultAlice,
+      -- At 2 it grows
+      holdFor 2 $ (alice . _Just . size) .~~ (0,0) $ (100, 100)
+      ],
+    -- Bob appears at 5
+    atT 5 $ allA [
+      doA $ bob .~ Just defaultBob,
+      -- And grows
+      holdFor 2 $ (bob . _Just . size) .~~ (0,0) $ (100, 100)
+      ]
+    ]
   defaultScene = TestScene Nothing Nothing
   defaultAlice = TestObj (0,0) (10,10)
   defaultBob = TestObj (0,0) (130,80)
