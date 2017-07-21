@@ -76,7 +76,7 @@ moveRect ((x0, y0), (x1, y1)) ((x2, y2), (x3, y3)) = Animation 1.0 $ \time -> Re
 
 data TestObj = TestObj { _size :: (Float, Float), _pos :: (Float, Float) } deriving (Show)
 
-data TestScene = TestScene { _alice :: Maybe TestObj } deriving (Show)
+data TestScene = TestScene { _alice :: Maybe TestObj, _bob :: Maybe TestObj } deriving (Show)
 
 -- testAnimation = takeTime 5 (alice is nothing) after (alice is (Just (0,0) (10, 10)) and alice.size goesFrom (0,0) (10,10))
 
@@ -86,23 +86,31 @@ after (Animation dur1 t1) (Animation dur2 t2) = Animation (dur1 + dur2) $ \time 
 atT :: Time -> Animation (a -> a) -> Animation (a -> a)
 atT timeToStart (Animation dur t) = Animation (dur + timeToStart) $ \time a -> if time < timeToStart then a else t (time - timeToStart) a
 
+bothA :: Animation (a -> a) -> Animation (a -> a) -> Animation (a -> a)
+bothA (Animation dur1 t1) (Animation dur2 t2) = Animation (max dur1 dur2) $ \time a -> t2 time $ t1 time a
+
 animate :: Animation (a -> a) -> a -> Animation a
 animate (Animation dur t) a = Animation dur $ \time -> t time a
 
 testAnimation :: Animation TestScene
-testAnimation = animate stuff defaultScene
+testAnimation = animate (bothA stuff things) defaultScene
   where
   stuff = atT 2 $ holdFor 2 $ Animation 1 $ \time a -> a{_alice = Just $ defaultAlice{_size = tween (0,0) (100,100) time}}
-  defaultScene = TestScene Nothing
+  things = atT 5 $ holdFor 2 $ Animation 1 $ \time a -> a{_bob = Just $ defaultBob{_size = tween (0,0) (100,100) time}}
+  defaultScene = TestScene Nothing Nothing
   defaultAlice = TestObj (0,0) (10,10)
+  defaultBob = TestObj (0,0) (130,80)
 
 drawScene :: TestScene -> Image PixelRGBA8 
-drawScene (TestScene alice) = renderDrawing 400 200 bg $ doAlice alice
+drawScene (TestScene alice bob) = renderDrawing 400 200 bg $ doAlice alice >> doBob bob
   where
   doAlice Nothing = return ()
   doAlice (Just (TestObj (w, h) (x,y))) = fillAndStroke aliceColour black $ rectangle (V2  x y) w h
+  doBob Nothing = return ()
+  doBob (Just (TestObj (w, h) (x,y))) = fillAndStroke bobColour black $ rectangle (V2  x y) w h
   black = PixelRGBA8 0 0 0 255
   aliceColour = PixelRGBA8 9 3 204 255
+  bobColour = PixelRGBA8 204 50 2 255
   bg = PixelRGBA8 126 4 204 255
 
 fillAndStroke fColor sColor shape = do
