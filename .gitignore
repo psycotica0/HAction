@@ -1,2 +1,5 @@
 *.hi
 *.o
+frame*.png
+.stack-work
+vid.mp4
