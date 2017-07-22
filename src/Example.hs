@@ -52,6 +52,7 @@ pauseFor :: Time -> Animation a -> Animation a
 pauseFor delay (Animation oldDur t) = Animation (delay + oldDur) $ \time -> if time < delay then t 0 else t (time - delay) 
 
 holdFor delay (Animation oldDur t) = Animation (delay + oldDur) $ \time -> if time < oldDur then t time else t oldDur
+hold = holdFor 0
 
 -- |sampleAt takes a framerate and an animation and goes through the whole animation generating values for each frame
 sampleAt :: Float -> Animation a -> [a]
@@ -116,6 +117,8 @@ elastic (Animation dur t) = Animation dur $ \time -> t $ innerElastic $ time / d
   innerElastic t = (2 ** (-10 * t)) * sin((t-p/4)*(2*pi)/p) + 1
   p = 0.3
 
+quint (Animation dur t) = Animation dur $ \time -> t $ 1 - ((1 - (time / dur)) ** 5)
+
 testAnimation :: Animation TestScene
 testAnimation = animate anims defaultScene
   where
@@ -124,17 +127,17 @@ testAnimation = animate anims defaultScene
     atT 2 $ allA [
       doA $ alice .~ Just defaultAlice,
       -- At 2 it grows
-      holdFor 2 $ elastic $ (alice . _Just . size) .~% (100, 100)
+      hold $ elastic $ (alice . _Just . size) .~% (100, 100)
       ],
     -- Bob appears at 5
     atT 5 $ allA [
       doA $ bob .~ Just defaultBob,
       -- And grows
-      holdFor 2 $ elastic $ (bob . _Just . size) .~% (100, 100)
+      hold $ elastic $ (bob . _Just . size) .~% (100, 100)
       ],
-    atT 4 $ holdFor 1 $ (alice ._Just .pos) .~% (35, 35),
-    atT 8 $ elastic $ viewport .~% ((-600, -300), (1000, 500)),
-    atT 10 $ elastic $ allA [
+    atT 4 $ hold $ quint $ (alice ._Just .pos) .~% (35, 35),
+    atT 8 $ hold $ quint $ viewport .~% ((-600, -300), (1000, 500)),
+    atT 10 $ holdFor 1 $ quint $ allA [
       (alice . _Just . pos) .~% (-500, -200),
       (bob . _Just . pos) .~% (900, 400)
       ]
