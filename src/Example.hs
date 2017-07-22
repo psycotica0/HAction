@@ -122,10 +122,15 @@ hold = tmap_n (min 1)
   - Stretch both to be the longer length: Both remain elastic, and shorter is
     scaled to match longer
 
-  I've gone with "Allow longer side to be elastic" because I expect that to
-  match my expectations during use
+  I've gone with "Allow both sides to be elastic" because it's simpler to
+  execute and most flexible
+  If you want one side to not be elastic, you can always use `hold`
 
-  The others are totally viable, though
+  It does mean in practical use you may be putting hold everywhere.
+  I was worried about running equality on Floats, and guessing wrong what
+  people were hoping for, so it's explicit
+
+  The others options are totally viable, though
 
 -}
 instance Applicative Animation where
