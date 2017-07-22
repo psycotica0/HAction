@@ -130,7 +130,11 @@ testAnimation = animate anims defaultScene
       -- And grows
       holdFor 2 $ elastic $ (bob . _Just . size) .~~ (0,0) $ (100, 100)
       ],
-    atT 8 $ elastic $ viewport .~~ ((0,0), (400, 200)) $ ((-600, -300), (1000, 500))
+    atT 8 $ elastic $ viewport .~~ ((0,0), (400, 200)) $ ((-600, -300), (1000, 500)),
+    atT 10 $ elastic $ allA [
+      (alice . _Just . pos) .~~ (70, 70) $ (-500, -200),
+      (bob . _Just . pos) .~~ (200, 100) $ (900, 400)
+      ]
     ]
   defaultScene = TestScene ((0,0), (400,200)) Nothing Nothing
   defaultAlice = TestObj (0,0) (70,70)
