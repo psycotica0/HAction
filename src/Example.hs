@@ -172,5 +172,5 @@ shadow shape = withTexture (uniformTexture shadowColour) $ withTransformation (s
 
 fillAndStroke fColor sColor shape = do
   withTexture (uniformTexture fColor) $ fill shape
-  withTexture (uniformTexture sColor) $ stroke 4 (JoinMiter 0) (CapRound, CapRound) shape
+  withTexture (uniformTexture sColor) $ stroke 2 (JoinMiter 0) (CapRound, CapRound) shape
   
