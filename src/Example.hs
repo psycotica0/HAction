@@ -5,6 +5,8 @@ import Control.Lens
 import Codec.Picture.Types (Image, PixelRGBA8(..))
 import Graphics.Rasterific
 import Graphics.Rasterific.Texture
+import Graphics.Rasterific.Transformations (translate, scale)
+import Data.Monoid ((<>))
 
 {-
 alice = (triangle.colour ~= Yellow).border ~= Black
@@ -77,7 +79,7 @@ moveRect ((x0, y0), (x1, y1)) ((x2, y2), (x3, y3)) = Animation 1.0 $ \time -> Re
 data TestObj = TestObj { _size :: (Float, Float), _pos :: (Float, Float) } deriving (Show)
 makeLenses ''TestObj
 
-data TestScene = TestScene { _alice :: Maybe TestObj, _bob :: Maybe TestObj } deriving (Show)
+data TestScene = TestScene { _viewport :: ((Float, Float), (Float, Float)), _alice :: Maybe TestObj, _bob :: Maybe TestObj } deriving (Show)
 makeLenses ''TestScene
 
 -- testAnimation = takeTime 5 (alice is nothing) after (alice is (Just (0,0) (10, 10)) and alice.size goesFrom (0,0) (10,10))
@@ -129,13 +131,17 @@ testAnimation = animate anims defaultScene
       holdFor 2 $ elastic $ (bob . _Just . size) .~~ (0,0) $ (100, 100)
       ]
     ]
-  defaultScene = TestScene Nothing Nothing
+  defaultScene = TestScene ((145,45), (255,155)) Nothing Nothing
   defaultAlice = TestObj (0,0) (70,70)
   defaultBob = TestObj (0,0) (200,100)
 
 drawScene :: TestScene -> Image PixelRGBA8 
-drawScene (TestScene alice bob) = renderDrawing 400 200 bg $ doAlice alice >> doBob bob
+drawScene (TestScene ((vx1, vy1), (vx2, vy2)) alice bob) = renderDrawing width height bg $ withViewport $ doAlice alice >> doBob bob
   where
+  width = 400
+  height = 200
+  viewportTransform = scale (fromIntegral width / (vx2 - vx1)) (fromIntegral height / (vy2 - vy1)) <> translate (V2 (-vx1) (-vy1))
+  withViewport = withTransformation viewportTransform
   doAlice Nothing = return ()
   doAlice (Just (TestObj (w, h) (x,y))) = fillAndStroke aliceColour black $ rectangle (V2 (x - w/2) (y - h/2)) w h
   doBob Nothing = return ()
