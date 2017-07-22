@@ -129,9 +129,10 @@ testAnimation = animate anims defaultScene
       doA $ bob .~ Just defaultBob,
       -- And grows
       holdFor 2 $ elastic $ (bob . _Just . size) .~~ (0,0) $ (100, 100)
-      ]
+      ],
+    atT 8 $ elastic $ viewport .~~ ((0,0), (400, 200)) $ ((-600, -300), (1000, 500))
     ]
-  defaultScene = TestScene ((145,45), (255,155)) Nothing Nothing
+  defaultScene = TestScene ((0,0), (400,200)) Nothing Nothing
   defaultAlice = TestObj (0,0) (70,70)
   defaultBob = TestObj (0,0) (200,100)
 
