@@ -105,6 +105,8 @@ animate (Animation dur t) a = Animation dur $ \time -> t time a
 (.~~) :: Tweenable b => ASetter s s a b -> b -> b -> Animation (s -> s)
 (.~~) lns v1 v2 = Animation 1 $ \time -> set lns (tween v1 v2 time)
 
+(.~%) lns v2 = Animation 1 $ \time -> over lns (\v1 -> tween v1 v2 time)
+
 doA :: (a -> a) -> Animation (a -> a)
 doA f = Animation 1 $ \_ -> f
 
@@ -122,18 +124,19 @@ testAnimation = animate anims defaultScene
     atT 2 $ allA [
       doA $ alice .~ Just defaultAlice,
       -- At 2 it grows
-      holdFor 2 $ elastic $ (alice . _Just . size) .~~ (0,0) $ (100, 100)
+      holdFor 2 $ elastic $ (alice . _Just . size) .~% (100, 100)
       ],
     -- Bob appears at 5
     atT 5 $ allA [
       doA $ bob .~ Just defaultBob,
       -- And grows
-      holdFor 2 $ elastic $ (bob . _Just . size) .~~ (0,0) $ (100, 100)
+      holdFor 2 $ elastic $ (bob . _Just . size) .~% (100, 100)
       ],
-    atT 8 $ elastic $ viewport .~~ ((0,0), (400, 200)) $ ((-600, -300), (1000, 500)),
+    atT 4 $ holdFor 1 $ (alice ._Just .pos) .~% (35, 35),
+    atT 8 $ elastic $ viewport .~% ((-600, -300), (1000, 500)),
     atT 10 $ elastic $ allA [
-      (alice . _Just . pos) .~~ (70, 70) $ (-500, -200),
-      (bob . _Just . pos) .~~ (200, 100) $ (900, 400)
+      (alice . _Just . pos) .~% (-500, -200),
+      (bob . _Just . pos) .~% (900, 400)
       ]
     ]
   defaultScene = TestScene ((0,0), (400,200)) Nothing Nothing
