@@ -142,7 +142,9 @@ testAnimation = animate anims defaultScene
 
 drawScene :: TestScene -> Image PixelRGBA8 
 drawScene (TestScene view alice bob) = renderDrawing width height bg $ withViewport $ do
+    mapM_ (shadow . rect) alice
     mapM_ (fillAndStroke aliceColour black . rect) alice
+    mapM_ (shadow . triangle) bob
     mapM_ (fillAndStroke bobColour black . triangle) bob
   where
   width = 400
@@ -157,6 +159,10 @@ drawScene (TestScene view alice bob) = renderDrawing width height bg $ withViewp
 
 rect (TestObj (w, h) (x, y)) = rectangle (V2 (x - w/2) (y - h/2)) w h
 triangle (TestObj (w, h) (x, y)) = polygon [V2 (x - w/2) (y + h/2), V2 x (y - h/2), V2 (x + w/2) (y + h/2)]
+
+shadow shape = withTexture (uniformTexture shadowColour) $ withTransformation (scale 1.1 1.1) $ fill shape
+  where
+  shadowColour = PixelRGBA8 0 0 0 128
 
 fillAndStroke fColor sColor shape = do
   withTexture (uniformTexture fColor) $ fill shape
