@@ -141,22 +141,22 @@ testAnimation = animate anims defaultScene
   defaultBob = TestObj (0,0) (200,100)
 
 drawScene :: TestScene -> Image PixelRGBA8 
-drawScene (TestScene ((vx1, vy1), (vx2, vy2)) alice bob) = renderDrawing width height bg $ withViewport $ doAlice alice >> doBob bob
+drawScene (TestScene view alice bob) = renderDrawing width height bg $ withViewport $ do
+    mapM_ (fillAndStroke aliceColour black . rect) alice
+    mapM_ (fillAndStroke bobColour black . triangle) bob
   where
   width = 400
   height = 200
+  ((vx1, vy1), (vx2, vy2)) = view
   viewportTransform = scale (fromIntegral width / (vx2 - vx1)) (fromIntegral height / (vy2 - vy1)) <> translate (V2 (-vx1) (-vy1))
   withViewport = withTransformation viewportTransform
-  doAlice Nothing = return ()
-  doAlice (Just (TestObj (w, h) (x,y))) = fillAndStroke aliceColour black $ rectangle (V2 (x - w/2) (y - h/2)) w h
-  doBob Nothing = return ()
-  doBob (Just (TestObj (w, h) (x,y))) = fillAndStroke bobColour black $ triangle x y w h
   black = PixelRGBA8 0 0 0 255
   aliceColour = PixelRGBA8 9 3 204 255
   bobColour = PixelRGBA8 204 50 2 255
   bg = PixelRGBA8 126 4 204 255
 
-triangle x y w h = polygon [V2 (x - w/2) (y + h/2), V2 x (y - h/2), V2 (x + w/2) (y + h/2)]
+rect (TestObj (w, h) (x, y)) = rectangle (V2 (x - w/2) (y - h/2)) w h
+triangle (TestObj (w, h) (x, y)) = polygon [V2 (x - w/2) (y + h/2), V2 x (y - h/2), V2 (x + w/2) (y + h/2)]
 
 fillAndStroke fColor sColor shape = do
   withTexture (uniformTexture fColor) $ fill shape
