@@ -43,6 +43,7 @@ data Animation a = Animation Time (Time -> a)
 -- So, `scaleTime 2` will make it take twice as long, `scaleTime 0.5` will make it take half the time
 scaleTime :: Float -> Animation a -> Animation a
 scaleTime factor (Animation oldDur t) = Animation (oldDur * factor) $ \time -> t (time / factor)
+-- scaleTime factor = tmap $ \(dur, time) -> (dur * factor, time / factor)
 
 -- |takeTime takes an animation and stretches or squeezes it as required to make it take the desired duration
 takeTime :: Time -> Animation a -> Animation a
@@ -50,8 +51,10 @@ takeTime dur anim@(Animation oldDur _) = scaleTime (dur / oldDur) anim
 
 pauseFor :: Time -> Animation a -> Animation a
 pauseFor delay (Animation oldDur t) = Animation (delay + oldDur) $ \time -> if time < delay then t 0 else t (time - delay) 
+-- pauseFor delay = tmap $ \(dur, time) -> (dur + delay, if time < delay then 0 else time - delay)
 
 holdFor delay (Animation oldDur t) = Animation (delay + oldDur) $ \time -> if time < oldDur then t time else t oldDur
+-- holdFor delay = tmap $ \(dur, time) -> (delay + dur, min dur time)
 -- hold = holdFor 0
 -- hold = tmap (max 1)
 
@@ -103,6 +106,7 @@ instance Functor Animation where
 --   denormalized back into duration
 tmap_n :: (Time -> Time) -> Animation a -> Animation a
 tmap_n f (Animation dur t) = Animation dur $ t . (dur *) . f . (/ dur)
+-- tmap_n f = tmap $ \(dur, time) -> (dur, dur * (f (time / dur)))
 
 hold = tmap_n (min 1)
 
