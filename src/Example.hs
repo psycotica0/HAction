@@ -106,12 +106,11 @@ animate (Animation dur t) a = Animation dur $ \time -> t time a
 doA :: (a -> a) -> Animation (a -> a)
 doA f = Animation 1 $ \_ -> f
 
-{-
 -- Stolen from https://joshondesign.com/2013/03/01/improvedEasingEquations
-elastic t = (2 ** (-10 * t)) * sin((t-p/4)*(2*pi)/p) + 1 -- Math.pow(2,-10*t) * Math.sin((t-p/4)*(2*Math.PI)/p) + 1
+elastic (Animation dur t) = Animation dur $ \time -> t $ innerElastic $ time / dur
   where
-  p = 0.03
--}
+  innerElastic t = (2 ** (-10 * t)) * sin((t-p/4)*(2*pi)/p) + 1
+  p = 0.3
 
 testAnimation :: Animation TestScene
 testAnimation = animate anims defaultScene
@@ -121,13 +120,13 @@ testAnimation = animate anims defaultScene
     atT 2 $ allA [
       doA $ alice .~ Just defaultAlice,
       -- At 2 it grows
-      holdFor 2 $ (alice . _Just . size) .~~ (0,0) $ (100, 100)
+      holdFor 2 $ elastic $ (alice . _Just . size) .~~ (0,0) $ (100, 100)
       ],
     -- Bob appears at 5
     atT 5 $ allA [
       doA $ bob .~ Just defaultBob,
       -- And grows
-      holdFor 2 $ (bob . _Just . size) .~~ (0,0) $ (100, 100)
+      holdFor 2 $ elastic $ (bob . _Just . size) .~~ (0,0) $ (100, 100)
       ]
     ]
   defaultScene = TestScene Nothing Nothing
