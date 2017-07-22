@@ -130,16 +130,16 @@ testAnimation = animate anims defaultScene
       ]
     ]
   defaultScene = TestScene Nothing Nothing
-  defaultAlice = TestObj (0,0) (10,10)
-  defaultBob = TestObj (0,0) (130,80)
+  defaultAlice = TestObj (0,0) (70,70)
+  defaultBob = TestObj (0,0) (200,100)
 
 drawScene :: TestScene -> Image PixelRGBA8 
 drawScene (TestScene alice bob) = renderDrawing 400 200 bg $ doAlice alice >> doBob bob
   where
   doAlice Nothing = return ()
-  doAlice (Just (TestObj (w, h) (x,y))) = fillAndStroke aliceColour black $ rectangle (V2  x y) w h
+  doAlice (Just (TestObj (w, h) (x,y))) = fillAndStroke aliceColour black $ rectangle (V2 (x - w/2) (y - h/2)) w h
   doBob Nothing = return ()
-  doBob (Just (TestObj (w, h) (x,y))) = fillAndStroke bobColour black $ rectangle (V2  x y) w h
+  doBob (Just (TestObj (w, h) (x,y))) = fillAndStroke bobColour black $ rectangle (V2 (x - w/2) (y - h/2)) w h
   black = PixelRGBA8 0 0 0 255
   aliceColour = PixelRGBA8 9 3 204 255
   bobColour = PixelRGBA8 204 50 2 255
