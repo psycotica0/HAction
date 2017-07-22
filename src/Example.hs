@@ -52,7 +52,8 @@ pauseFor :: Time -> Animation a -> Animation a
 pauseFor delay (Animation oldDur t) = Animation (delay + oldDur) $ \time -> if time < delay then t 0 else t (time - delay) 
 
 holdFor delay (Animation oldDur t) = Animation (delay + oldDur) $ \time -> if time < oldDur then t time else t oldDur
-hold = holdFor 0
+-- hold = holdFor 0
+-- hold = tmap (max 1)
 
 -- |sampleAt takes a framerate and an animation and goes through the whole animation generating values for each frame
 sampleAt :: Float -> Animation a -> [a]
@@ -91,14 +92,59 @@ after (Animation dur1 t1) (Animation dur2 t2) = Animation (dur1 + dur2) $ \time 
 atT :: Time -> Animation (a -> a) -> Animation (a -> a)
 atT timeToStart (Animation dur t) = Animation (dur + timeToStart) $ \time a -> if time < timeToStart then a else t (time - timeToStart) a
 
-bothA :: Animation (a -> a) -> Animation (a -> a) -> Animation (a -> a)
-bothA (Animation dur1 t1) (Animation dur2 t2) = Animation (max dur1 dur2) $ \time a -> t2 time $ t1 time a
+instance Functor Animation where
+  fmap f (Animation dur t) = Animation dur $ fmap f t
 
+-- |tmap_n is my profunctor, but I can't be a Profunctor
+-- It maps functions from (Time -> Time) which I use for many of my warps
+-- For the purposes of the inner function, the animation always goes from 0 to 1
+-- (It's normalized to duration by tmap)
+-- It's expected to produce a new value between 0 and 1 as well, which will be
+--   denormalized back into duration
+tmap_n :: (Time -> Time) -> Animation a -> Animation a
+tmap_n f (Animation dur t) = Animation dur $ t . (dur *) . f . (/ dur)
+
+hold = tmap_n (min 1)
+
+{-
+  There are many Applicative instances I could have chosen when the duration
+  differ
+  - Allow both sides to be elastic: The shorter one explodes beyond its
+    duration
+  - Allow longer side to be elastic: The shorter is capped at its duration,
+    longer expands
+  - Only be the length of the shorter: The longer side is only expressed by
+    explotion
+  - Stretch both to be the longer length: Both remain elastic, and shorter is
+    scaled to match longer
+
+  I've gone with "Allow longer side to be elastic" because I expect that to
+  match my expectations during use
+
+  The others are totally viable, though
+
+-}
+instance Applicative Animation where
+  pure = Animation 0 . const
+  (Animation dur1 f) <*> (Animation dur2 g) = Animation (max dur1 dur2) $ \time -> f time $ g time
+
+-- |This is mempty, but Haskell won't let me do it without extentions
+emptyA :: Animation (a -> a)
+emptyA = pure id -- Animation 0 $ const id
+
+-- |This is mappend, but Haskell won't let me do it without extensions
+bothA :: Animation (a -> a) -> Animation (a -> a) -> Animation (a -> a)
+--bothA (Animation dur1 t1) (Animation dur2 t2) = Animation (max dur1 dur2) $ \time a -> t2 time $ t1 time a
+bothA a1 a2 = pure (.) <*> a2 <*> a1
+
+-- |This is mconcat, but Haskell won't let me do it without extensions
 allA :: [Animation (a -> a)] -> Animation (a -> a)
-allA = foldl1 bothA
+allA = foldl bothA emptyA
 
 animate :: Animation (a -> a) -> a -> Animation a
-animate (Animation dur t) a = Animation dur $ \time -> t time a
+-- animate (Animation dur t) a = Animation dur $ \time -> t time a
+-- animate anim def = fmap ($ def) anim
+animate anim def = anim <*> pure def
 
 (.~~.) :: Tweenable b => ASetter s t a b -> b -> b -> Time -> s -> t
 (.~~.) lns v1 v2 time obj = set lns (tween v1 v2 time) obj
@@ -109,15 +155,16 @@ animate (Animation dur t) a = Animation dur $ \time -> t time a
 (.~%) lns v2 = Animation 1 $ \time -> over lns (\v1 -> tween v1 v2 time)
 
 doA :: (a -> a) -> Animation (a -> a)
-doA f = Animation 1 $ \_ -> f
+-- doA f = Animation 1 $ \_ -> f
+doA = pure
 
 -- Stolen from https://joshondesign.com/2013/03/01/improvedEasingEquations
-elastic (Animation dur t) = Animation dur $ \time -> t $ innerElastic $ time / dur
+elastic = tmap_n innerElastic
   where
   innerElastic t = (2 ** (-10 * t)) * sin((t-p/4)*(2*pi)/p) + 1
   p = 0.3
 
-quint (Animation dur t) = Animation dur $ \time -> t $ 1 - ((1 - (time / dur)) ** 5)
+quint = tmap_n $ \time -> 1 - ((1 - time) ** 5)
 
 testAnimation :: Animation TestScene
 testAnimation = animate anims defaultScene
