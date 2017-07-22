@@ -106,6 +106,13 @@ animate (Animation dur t) a = Animation dur $ \time -> t time a
 doA :: (a -> a) -> Animation (a -> a)
 doA f = Animation 1 $ \_ -> f
 
+{-
+-- Stolen from https://joshondesign.com/2013/03/01/improvedEasingEquations
+elastic t = (2 ** (-10 * t)) * sin((t-p/4)*(2*pi)/p) + 1 -- Math.pow(2,-10*t) * Math.sin((t-p/4)*(2*Math.PI)/p) + 1
+  where
+  p = 0.03
+-}
+
 testAnimation :: Animation TestScene
 testAnimation = animate anims defaultScene
   where
