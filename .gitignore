@@ -1,6 +1,5 @@
 *.hi
 *.o
 frame*.png
-picked.png
 .stack-work
 vid.mp4

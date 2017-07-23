@@ -8,10 +8,10 @@ frame0.png: src/Example.hs app/Main.hs Makefile
 	stack build
 	stack exec haskell-animation-exe
 
-picked.png: src/Example.hs app/Main.hs Makefile
-	rm -f picked.png
+frameT${TIME}.png: src/Example.hs app/Main.hs Makefile
+	rm -f frameT${TIME}.png
 	stack build
 	stack exec haskell-animation-exe "${TIME}"
 
-view: picked.png
-	feh picked.png
+view: frameT${TIME}.png
+	feh frameT${TIME}.png

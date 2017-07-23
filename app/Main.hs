@@ -14,5 +14,9 @@ main = do
   args <- getArgs
   case args of
     -- A particular second was requested
-    x:_ -> let fr = floor (frameRate * read x) in writePng "picked.png" $ snd $ frames !! fr
+    x:_ -> let
+      fr = floor (frameRate * read x)
+      (idx, img) = frames !! fr
+      in
+      writePng ("frameT" ++ x ++ ".png") img
     otherwise -> forM_ frames $ \(idx, img) -> writePng ("frame" ++ show idx ++ ".png") img
