@@ -248,7 +248,7 @@ drawScene (TestScene view alice bob unsavory) = renderDrawing width height bg $ 
     mapM_ (fillAndStroke bobColour black . triangle) bob
     drawUnsavory unsavory
   where
-  width = 400
+  width = height * 2
   height = 200
   ((vx1, vy1), (vx2, vy2)) = view
   viewportTransform = scale (fromIntegral width / (vx2 - vx1)) (fromIntegral height / (vy2 - vy1)) <> translate (V2 (-vx1) (-vy1))
